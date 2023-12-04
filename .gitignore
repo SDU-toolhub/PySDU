@@ -1,0 +1,8 @@
+__pycache__
+
+.vscode
+.venv
+.idea
+*/__pycache__/*
+
+code_example
