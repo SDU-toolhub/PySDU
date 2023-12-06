@@ -12,7 +12,7 @@ Current features:
 pdm install
 ```
 
-or 
+or use pip to install:
 
 ```bash
 pip install -r requirements.txt
