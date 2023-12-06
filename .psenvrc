@@ -1,2 +1,2 @@
 Write-Host "Activating venv..."
-./.venv/bin/activate.ps1
+./.venv/Scripts/activate.ps1
