@@ -1,3 +1,4 @@
+import os
 import bs4, datetime
 from login import *
 
@@ -196,8 +197,18 @@ if __name__ == '__main__':
 
         username = input('学号：')
         password = getpass.getpass('密码：')
+        # check if fingerprint.json exists
+        if not os.path.exists("fingerprint.json"):
+            # create fingerprint.json
+            with open("fingerprint.json", "w") as f:
+                json.dump({}, f)
+            print("生成默认指纹文件，请修改fingerprint.json中的信息后重新运行；或者使用空指纹登录。")
+            print("指纹文件路径：", os.path.abspath("fingerprint.json"))
+            print("此文件作为设备的标志。其内容如果不改变，就不必重复输入短信验证码。如果更换设备，可以直接拷贝走这个文件。")
         with open("fingerprint.json", "r") as f:
             fake_platoform_fingerprint = json.load(f)
+        if not fake_platoform_fingerprint:
+            assert input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("fingerprint.json")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y"
         cookie = bkzhjx_login(username, password, fake_platoform_fingerprint)
         out = {}
         for k, v in cookie.items():
