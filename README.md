@@ -21,6 +21,8 @@ pip install -r requirements.txt
 
 ## Usage
 
+First, it is recommended that the fingerprint json file be edited. You may use a random json whose keys and values are random strings. I am not sure whether a too-simple string can pass the device fingerprint check on SDU pass.
+
 ```bash
 python ./src/main.py  # get user info
 python ./src/bkzhjx_login.py  # get lessons
