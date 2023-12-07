@@ -127,7 +127,7 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
                 'Please check your username. Device information cannot be loaded by SDU pass.'
             )
             raise SystemError(
-                f'Unknown device status: {str(device_status_dict)}'
+                'Unknown device status: {}'.format(str(device_status_dict))
             )
     cookies = page.cookies
     headers = {
