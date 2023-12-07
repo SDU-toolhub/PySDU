@@ -43,8 +43,8 @@ def getKeyBytes(key: str) -> list:
 
 
 def strToBt(_str: str) -> list:
-    bt = [0 for i in range(64)]
-    _str = _str + chr(0) * max(0, (4 - len(_str)))
+    bt = [0] * 64
+    _str += chr(0) * max(0, (4 - len(_str)))
     for i in range(4):
         k = ord(_str[i])
         for j in range(16):
@@ -61,17 +61,13 @@ def bt4ToHex(binary: str) -> str:
 
 
 def hexToBt4(hex: str) -> str:
-    if len(hex) != 1:
-        return ''
-    return '{:04b}'.format(int(hex, 16))
+    return '' if len(hex) != 1 else '{:04b}'.format(int(hex, 16))
 
 
 def bt64ToHex(byteData: list) -> str:
     hex = ""
     for i in range(16):
-        bt = ''
-        for j in range(4):
-            bt += str(byteData[i * 4 + j])
+        bt = ''.join(str(byteData[i * 4 + j]) for j in range(4))
         hex += bt4ToHex(bt)
     return hex
 
@@ -79,9 +75,9 @@ def bt64ToHex(byteData: list) -> str:
 def enc(dataByte: list, keyByte: list) -> list:
     keys = generateKeys(keyByte)
     ipByte = initPermute(dataByte)
-    ipLeft = [0 for i in range(32)]
-    ipRight = [0 for i in range(32)]
-    tempLeft = [0 for i in range(32)]
+    ipLeft = [0] * 32
+    ipRight = [0] * 32
+    tempLeft = [0] * 32
     for k in range(32):
         ipLeft[k] = ipByte[k]
         ipRight[k] = ipByte[32 + k]
@@ -103,7 +99,7 @@ def enc(dataByte: list, keyByte: list) -> list:
 
 
 def initPermute(originalData: list) -> list:
-    ipByte = [0 for i in range(64)]
+    ipByte = [0] * 64
     for i in range(4):
         m = 1 + i * 2
         n = i * 2
@@ -115,20 +111,14 @@ def initPermute(originalData: list) -> list:
 
 
 def expandPermute(rightData: list) -> list:
-    epByte = [0 for i in range(48)]
+    epByte = [0] * 48
     for i in range(8):
-        if i == 0:
-            epByte[i * 6 + 0] = rightData[31]
-        else:
-            epByte[i * 6 + 0] = rightData[i * 4 - 1]
+        epByte[i * 6 + 0] = rightData[31] if i == 0 else rightData[i * 4 - 1]
         epByte[i * 6 + 1] = rightData[i * 4 + 0]
         epByte[i * 6 + 2] = rightData[i * 4 + 1]
         epByte[i * 6 + 3] = rightData[i * 4 + 2]
         epByte[i * 6 + 4] = rightData[i * 4 + 3]
-        if i == 7:
-            epByte[i * 6 + 5] = rightData[0]
-        else:
-            epByte[i * 6 + 5] = rightData[i * 4 + 4]
+        epByte[i * 6 + 5] = rightData[0] if i == 7 else rightData[i * 4 + 4]
     return epByte
 
 
@@ -137,7 +127,7 @@ def xor(byteOne: list, byteTwo: list) -> list:
 
 
 def sBoxPermute(expandByte: list) -> list:
-    sBoxByte = [0 for i in range(32)]
+    sBoxByte = [0] * 32
     s1 = [
         [14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7],
         [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8],
@@ -191,7 +181,7 @@ def sBoxPermute(expandByte: list) -> list:
 
 
 def pPermute(sBoxByte: list) -> list:
-    pBoxPermute = [0 for i in range(32)]
+    pBoxPermute = [0] * 32
     pBoxPermute[0] = sBoxByte[15]
     pBoxPermute[1] = sBoxByte[6]
     pBoxPermute[2] = sBoxByte[19]
@@ -228,7 +218,7 @@ def pPermute(sBoxByte: list) -> list:
 
 
 def finallyPermute(endByte: list) -> list:
-    fpByte = [0 for i in range(64)]
+    fpByte = [0] * 64
     fpByte[0] = endByte[39]
     fpByte[1] = endByte[7]
     fpByte[2] = endByte[47]
@@ -301,15 +291,15 @@ def getBoxBinary(i: int) -> str:
 
 
 def generateKeys(keyByte: list) -> list:
-    key = [0 for i in range(56)]
-    keys = [[0 for j in range(48)] for i in range(16)]
+    key = [0] * 56
+    keys = [[0 for _ in range(48)] for _ in range(16)]
     loop = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
     for i in range(7):
         for j in range(8):
             k = 7 - j
             key[i * 8 + j] = keyByte[8 * k + i]
     for i in range(16):
-        for j in range(loop[i]):
+        for _ in range(loop[i]):
             tempLeft = key[0]
             tempRight = key[28]
             for k in range(27):

@@ -161,9 +161,7 @@ if __name__ == '__main__':
         if not fake_platoform_fingerprint:
             assert input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("fingerprint.json")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y"
         cookie = bkzhjx_login(username, password, fake_platoform_fingerprint)
-        out = {}
-        for k, v in cookie.items():
-            out[k] = v
+        out = dict(cookie.items())
         with open("bkzhjx_cookies.json", "w") as f:
             json.dump(out, f)
     else:

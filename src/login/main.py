@@ -58,7 +58,7 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
     Using webpage to login, powered by execjs, BeautifulSoup4 to parse the html and httpx to send requests.
     """
     if service:
-        page = httpx.get(r"https://pass.sdu.edu.cn/cas/login?service=" + service)
+        page = httpx.get(f"https://pass.sdu.edu.cn/cas/login?service={service}")
     else:
         page = httpx.get(r"https://pass.sdu.edu.cn/cas/login")
     lt = re.findall(r'name="lt" value="(.*?)"', page.text)[0]
@@ -89,30 +89,46 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
             pass
         case 'bind':
             print('2FA:' + device_status_dict.get('m'))
-            tmp = httpx.post(r'https://pass.sdu.edu.cn/cas/device', data={'m':'2'}, cookies=page.cookies)
+            tmp = httpx.post(
+                r'https://pass.sdu.edu.cn/cas/device',
+                data={'m': '2'},
+                cookies=page.cookies,
+            )
             if tmp.text == r'{"info":"send"}':
                 print('已发送验证码')
             else:
-                raise SystemError('Unknown SMS status: ' + tmp.text)
+                raise SystemError(f'Unknown SMS status: {tmp.text}')
             body3 = {
                 'd': murmur_s,
                 'i': det,
                 'm': '3',
                 'u': username,
                 'c': input('请输入验证码：'),
-                's': '1' if input('下次不再输入验证码？(y/N)：') == 'y' else '0'
+                's': '1' if input('下次不再输入验证码？(y/N)：') == 'y' else '0',
             }
-            k = httpx.post(r'https://pass.sdu.edu.cn/cas/device', data=body3, cookies=page.cookies)
+            k = httpx.post(
+                r'https://pass.sdu.edu.cn/cas/device',
+                data=body3,
+                cookies=page.cookies,
+            )
             while k.text == r'{"info":"codeErr"}':
                 body3['c'] = input('验证码错误，请重新输入：')
-                k = httpx.post(r'https://pass.sdu.edu.cn/cas/device', data=body3, cookies=page.cookies)
+                k = httpx.post(
+                    r'https://pass.sdu.edu.cn/cas/device',
+                    data=body3,
+                    cookies=page.cookies,
+                )
             if k.text == r'{"info":"ok"}':
                 print('验证成功')
                 if body3['s'] == '1':
                     print(f'对于设备信息：{platform_info}，下次登录将不再需要验证码')
         case _:
-            print('Please check your username. Device information cannot be loaded by SDU pass.')
-            raise SystemError('Unknown device status: ' + str(device_status_dict))
+            print(
+                'Please check your username. Device information cannot be loaded by SDU pass.'
+            )
+            raise SystemError(
+                'Unknown device status: {}'.format(str(device_status_dict))
+            )
     cookies = page.cookies
     headers = {
         # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -136,7 +152,7 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
         # 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
     }
     page2 = httpx.post(r"https://pass.sdu.edu.cn/cas/login?service=http%3A%2F%2Fbkzhjx.wh.sdu.edu.cn%2Fsso.jsp", content=content, cookies=cookies, headers=headers)
-    if page2.status_code == 302 or page2.status_code == 200:
+    if page2.status_code in [302, 200]:
         return page2
     else:
         raise SystemError('Login to pass.sdu.edu.cn failed.')
