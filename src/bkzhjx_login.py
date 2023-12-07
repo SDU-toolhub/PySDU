@@ -12,15 +12,11 @@ def bkzhjx_login(username, password, platform_info: dict = {}):
     SERVERID = sso_redirect.cookies['SERVERID']
 
     page2 = webpage_login(username, password, platform_info, r'http%3A%2F%2Fbkzhjx.wh.sdu.edu.cn%2Fsso.jsp')
-    if page2.status_code == 200:
-        print(page2.cookies)
+    if page2.status_code != 302:
+        print('Check your username and password.')
+        raise SystemError('Login failed: No redirect. to bkzhjx.wh.sdu.edu.cn')
     redirect_url = page2.headers['Location']
-
-    headers = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Upgrade-Insecure-Requests':'1',
-    }
-    page = httpx.get(redirect_url, headers=headers)
+    page = httpx.get(redirect_url)
 
     headers = {
         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -42,42 +38,11 @@ def bkzhjx_login(username, password, platform_info: dict = {}):
     cookies.set('bzb_njw', bzb_njw, path="/", domain="bkzhjx.wh.sdu.edu.cn")
 
     redirect_page = httpx.get(page.headers['Location'], headers=headers, cookies=cookies)
-    # print(redirect_page.headers, redirect_page.status_code)
-    # cookies = page.cookies
-    headers = {
-        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Encoding':'gzip, deflate, br',
-        'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
-        'Connection':'keep-alive',
-        'Cookie':f'SERVERID={SERVERID}; bzb_njw={bzb_njw}',
-        'Host':'bkzhjx.wh.sdu.edu.cn',
-        # 'Referer':redirect_page.headers['Location'],
-        'Sec-Fetch-Dest':'document',
-        'Sec-Fetch-Mode':'navigate',
-        'Sec-Fetch-Site':'same-site',
-        'Sec-Fetch-User':'?1',
-        'Upgrade-Insecure-Requests':'1',
-    }
 
     sso_page = httpx.get(redirect_page.headers['Location'], headers=headers, cookies=cookies)
     # print(sso_page.headers, sso_page.status_code)
     while sso_page.status_code == 302:
         redirect_url = sso_page.headers['Location']
-        headers = {
-            'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Encoding':'gzip, deflate, br',
-            'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
-            'Connection':'keep-alive',
-            'Cookie':f'SERVERID={SERVERID}; bzb_njw={bzb_njw}',
-            'Host':'bkzhjx.wh.sdu.edu.cn',
-            'Referer':redirect_page.headers['Location'],
-            'Sec-Fetch-Dest':'document',
-            'Sec-Fetch-Mode':'navigate',
-            'Sec-Fetch-Site':'same-site',
-            'Sec-Fetch-User':'?1',
-            'Upgrade-Insecure-Requests':'1',
-        }
-        # print(redirect_url, cookies)
         sso_page = httpx.get(redirect_url, headers=headers, cookies=cookies)
         cookies = sso_page.cookies
         if cookies.get('bzb_jsxsd') is not None:
@@ -88,21 +53,7 @@ def bkzhjx_login(username, password, platform_info: dict = {}):
     cookies.set('bzb_njw', bzb_njw, path="/", domain="bkzhjx.wh.sdu.edu.cn")
     cookies.set('bzb_jsxsd', bzb_jsxsd, path="/", domain="bkzhjx.wh.sdu.edu.cn")
     redirect_url = sso_page.headers['Location']
-    headers = {
-        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        # 'Accept-Encoding':'gzip, deflate, br',
-        'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
-        'Cache-Control':'max-age=0',
-        'Connection':'keep-alive',
-        'Cookie':f'SERVERID={SERVERID}; bzb_njw={bzb_njw}; bzb_jsxsd={bzb_jsxsd}',
-        'Host':'bkzhjx.wh.sdu.edu.cn',
-        'Referer':redirect_page.headers['Location'],
-        'Sec-Fetch-Dest':'document',
-        'Sec-Fetch-Mode':'navigate',
-        'Sec-Fetch-Site':'same-site',
-        'Sec-Fetch-User':'?1',
-        'Upgrade-Insecure-Requests':'1',
-    }
+    headers['Cookie'] = f'SERVERID={SERVERID}; bzb_njw={bzb_njw}; bzb_jsxsd={bzb_jsxsd}'
     page = httpx.get(redirect_url, cookies=cookies, headers=headers)
 
     if page.status_code == 200:
@@ -210,9 +161,7 @@ if __name__ == '__main__':
         if not fake_platoform_fingerprint:
             assert input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("fingerprint.json")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y"
         cookie = bkzhjx_login(username, password, fake_platoform_fingerprint)
-        out = {}
-        for k, v in cookie.items():
-            out[k] = v
+        out = dict(cookie.items())
         with open("bkzhjx_cookies.json", "w") as f:
             json.dump(out, f)
     else:
