@@ -124,7 +124,7 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
                     print(f'对于设备信息：{platform_info}，下次登录将不再需要验证码')
         case _:
             print(
-                'Please check your username and password. Device information cannot be loaded by SDU pass.'
+                'Please check your username. Device information cannot be loaded by SDU pass.'
             )
             raise SystemError(
                 f'Unknown device status: {str(device_status_dict)}'
