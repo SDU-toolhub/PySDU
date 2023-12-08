@@ -2,8 +2,8 @@
 
 Many thanks to existing projects including:
 
-- ![uniform login DES in Python](https://github.com/zhangt2333/awesome-SDU-scripts/blob/master/GPA-Spider/uniform_login/uniform_login_des.py)
-- ![SDU SSO](https://github.com/Jenway/SDU_login_API)
+- [uniform login DES in Python](https://github.com/zhangt2333/awesome-SDU-scripts/blob/master/GPA-Spider/uniform_login/uniform_login_des.py)
+- [SDU SSO](https://github.com/Jenway/SDU_login_API)
 
 现在已经能
 Current features:
