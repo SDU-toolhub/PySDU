@@ -3,9 +3,10 @@
 现在已经能
 Current features:
 
-- login to SDU SSO
+- login to SDU SSO, and bind fake device fingerprint to the account to bypass the 2FA process
 - get user info
 - get lessons from bkzhjx.wh.sdu.edu.cn
+- get classroom info from pcms.sdu.edu.cn (TO be enhanced and stored in database and support all API features, not yet finished)
 
 ## Install
 
