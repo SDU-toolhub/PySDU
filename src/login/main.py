@@ -152,7 +152,7 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
         # 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
     }
     page2 = httpx.post(r"https://pass.sdu.edu.cn/cas/login?service=http%3A%2F%2Fbkzhjx.wh.sdu.edu.cn%2Fsso.jsp", content=content, cookies=cookies, headers=headers)
-    if page2.status_code in [302, 200]:
+    if page2.status_code == 302:
         return page2
     else:
         raise SystemError('Login to pass.sdu.edu.cn failed.')
