@@ -1,6 +1,7 @@
 import os
 import bs4, datetime
 from login import *
+import csv
 
 def bkzhjx_login(username, password, platform_info: dict = {}):
     sso_redirect = httpx.get(r'http://bkzhjx.wh.sdu.edu.cn/sso.jsp')
@@ -135,6 +136,43 @@ def get_timetable(cookie):
     finally:
         return
 
+def get_score(cookie, semester):
+    url = "https://bkzhjx.wh.sdu.edu.cn/jsxsd/kscj/cjcx_list"
+    headers = {
+        "Cookie": f"bzb_jsxsd={cookie['bzb_jsxsd']}; SERVERID={cookie['SERVERID']}; bzb_njw={cookie['bzb_njw']}",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36",
+    }
+    data = {"kksj": semester, "kcxz": "", "kcmc": "", "xsfs": "all", "sfxsbcxq": "1"}
+
+    response = httpx.post(url, headers=headers, data=data)
+
+    if response.status_code == 200:
+        # 解析 HTML
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        table = soup.find("table", id="dataList")
+        rows = table.find_all("tr")
+
+        data = []
+
+        header = rows[0].find_all("th")
+        header = [col.text.strip() for col in header]
+        data.append(header[1:])
+
+        for row in rows[1:]:
+            cols = row.find_all("td")
+            cols = [col.text.strip() for col in cols]
+            data.append(cols[1:])
+
+        csv_file = "output.csv"
+        with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+
+        print(f"数据已写入 {csv_file} 文件中。")
+
+    else:
+        return f"Error: {response.status_code}"
+
 if __name__ == '__main__':
     try:
         with open("bkzhjx_cookies.json", "r") as f:
@@ -168,3 +206,4 @@ if __name__ == '__main__':
         print('cookies有效，免输入密码')
     finally:
         get_timetable(cookie)
+        get_score(cookie,'')
