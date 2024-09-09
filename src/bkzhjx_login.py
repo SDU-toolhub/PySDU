@@ -1,9 +1,14 @@
-import os
+import os, sys, json, re
 import bs4, datetime
-from login import *
+import httpx
+from httpx import Cookies
+from login import webpage_login
 import csv
 
-def bkzhjx_login(username, password, platform_info: dict = {}):
+def bkzhjx_login(username, password, platform_info: dict = {}) -> Cookies:
+    """
+    Login to bkzhjx.wh.sdu.edu.cn, and return the cookies.
+    """
     sso_redirect = httpx.get(r'http://bkzhjx.wh.sdu.edu.cn/sso.jsp')
     # print(sso_redirect.headers, sso_redirect.cookies)
     sso_redirect = httpx.get(sso_redirect.headers['Location'])
@@ -136,7 +141,7 @@ def get_timetable(cookie):
     finally:
         return
 
-def get_score(cookie, semester):
+def get_score(cookie, semester, csv_file = "output.csv"):
     url = "https://bkzhjx.wh.sdu.edu.cn/jsxsd/kscj/cjcx_list"
     headers = {
         "Cookie": f"bzb_jsxsd={cookie['bzb_jsxsd']}; SERVERID={cookie['SERVERID']}; bzb_njw={cookie['bzb_njw']}",
@@ -163,7 +168,7 @@ def get_score(cookie, semester):
             cols = [col.text.strip() for col in cols]
             data.append(cols[1:])
 
-        csv_file = "output.csv"
+        
         with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
             writer.writerows(data)
@@ -172,6 +177,30 @@ def get_score(cookie, semester):
 
     else:
         return f"Error: {response.status_code}"
+
+def interactive_login():
+    
+    import getpass
+
+    username = input('学号：')
+    password = getpass.getpass('密码：')
+    # check if fingerprint.json exists
+    if not os.path.exists("fingerprint.json"):
+        # create fingerprint.json
+        with open("fingerprint.json", "w") as f:
+            json.dump({}, f)
+        print("生成默认指纹文件，请修改fingerprint.json中的信息后重新运行；或者使用空指纹登录。")
+        print("指纹文件路径：", os.path.abspath("fingerprint.json"))
+        print("此文件作为设备的标志。其内容如果不改变，就不必重复输入短信验证码。如果更换设备，可以直接拷贝走这个文件。")
+    with open("fingerprint.json", "r") as f:
+        fake_platoform_fingerprint = json.load(f)
+    if not fake_platoform_fingerprint:
+        if not input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("fingerprint.json")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y":
+            sys.exit(0)
+    cookie = bkzhjx_login(username, password, fake_platoform_fingerprint)
+    out = dict(cookie.items())
+    with open("bkzhjx_cookies.json", "w") as f:
+        json.dump(out, f)
 
 if __name__ == '__main__':
     try:
@@ -182,28 +211,9 @@ if __name__ == '__main__':
         assert page.status_code == 200
     except Exception as e:
         print('未找到有效cookies，将重新登录')
-        import getpass
-
-        username = input('学号：')
-        password = getpass.getpass('密码：')
-        # check if fingerprint.json exists
-        if not os.path.exists("fingerprint.json"):
-            # create fingerprint.json
-            with open("fingerprint.json", "w") as f:
-                json.dump({}, f)
-            print("生成默认指纹文件，请修改fingerprint.json中的信息后重新运行；或者使用空指纹登录。")
-            print("指纹文件路径：", os.path.abspath("fingerprint.json"))
-            print("此文件作为设备的标志。其内容如果不改变，就不必重复输入短信验证码。如果更换设备，可以直接拷贝走这个文件。")
-        with open("fingerprint.json", "r") as f:
-            fake_platoform_fingerprint = json.load(f)
-        if not fake_platoform_fingerprint:
-            assert input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("fingerprint.json")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y"
-        cookie = bkzhjx_login(username, password, fake_platoform_fingerprint)
-        out = dict(cookie.items())
-        with open("bkzhjx_cookies.json", "w") as f:
-            json.dump(out, f)
+        interactive_login()
     else:
         print('cookies有效，免输入密码')
     finally:
         get_timetable(cookie)
-        get_score(cookie,'')
+        get_score(cookie,'', csv_file='score.csv')
