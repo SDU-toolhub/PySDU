@@ -1,3 +1,6 @@
+import getpass
+import os
+import sys
 import json
 import httpx
 import xml.dom.minidom
@@ -151,3 +154,23 @@ def webpage_login(
         return page2
     else:
         raise SystemError("Login to pass.sdu.edu.cn failed.")
+
+def get_username_and_password_from_stdin() -> tuple[str, str, str]:
+    """
+    Get username and password from stdin, and get the platform fingerprint from Fingerprint.txt.
+    """
+    if not os.path.exists("Fingerprint.txt"):
+        # create fingerprint file which should be empty at first
+        with open("Fingerprint.txt", "w", encoding='utf-8') as f:
+            f.write("")
+        print("生成默认指纹文件，请修改Fingerprint.txt中的信息后重新运行；或者使用空指纹登录。")
+        print("指纹文件路径：", os.path.abspath("Fingerprint.txt"))
+        print("此文件作为设备的标志。其内容如果不改变，就不必重复输入短信验证码。如果更换设备，可以直接拷贝走这个文件。")
+    with open("Fingerprint.txt", "r", encoding='utf-8') as f:
+        fake_platoform_fingerprint = f.read()
+    if not fake_platoform_fingerprint:
+        if not input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("Fingerprint.txt")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y":
+            sys.exit(0)
+    username = input('学号：')
+    password = getpass.getpass('密码：')
+    return username, password, fake_platoform_fingerprint

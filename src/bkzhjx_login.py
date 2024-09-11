@@ -3,7 +3,7 @@ import os, sys, re
 import bs4, datetime
 import httpx
 from httpx import Cookies
-from login import webpage_login
+from login import webpage_login, get_username_and_password_from_stdin
 import csv
 
 def bkzhjx_login(username:str , password:str , platform_fingerprint: str) -> Cookies:
@@ -182,26 +182,7 @@ def get_score(cookie, semester, csv_file = "output.csv"):
         return f"Error: {response.status_code} HTTP response."
 
 def interactive_login():
-    
-    import getpass
-
-
-    # check if fingerprint file exists
-    if not os.path.exists("Fingerprint.txt"):
-        # create fingerprint file which should be empty at first
-        with open("Fingerprint.txt", "w", encoding='utf-8') as f:
-            f.write("")
-        print("生成默认指纹文件，请修改Fingerprint.txt中的信息后重新运行；或者使用空指纹登录。")
-        print("指纹文件路径：", os.path.abspath("Fingerprint.txt"))
-        print("此文件作为设备的标志。其内容如果不改变，就不必重复输入短信验证码。如果更换设备，可以直接拷贝走这个文件。")
-    with open("Fingerprint.txt", "r", encoding='utf-8') as f:
-        fake_platoform_fingerprint = f.read()
-    if not fake_platoform_fingerprint:
-        if not input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("Fingerprint.txt")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y":
-            sys.exit(0)
-    username = input('学号：')
-    password = getpass.getpass('密码：')
-    cookie: Cookies = bkzhjx_login(username, password, fake_platoform_fingerprint)
+    cookie: Cookies = bkzhjx_login(*get_username_and_password_from_stdin())
     out = dict(cookie.items())
     with open("bkzhjx_cookies.json", "w") as f:
         json.dump(out, f)
