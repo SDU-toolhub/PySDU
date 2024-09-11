@@ -6,7 +6,7 @@ from httpx import Cookies
 from login import webpage_login
 import csv
 
-def bkzhjx_login(username, password, platform_fingerprint: str) -> Cookies:
+def bkzhjx_login(username:str , password:str , platform_fingerprint: str) -> Cookies:
     """
     Login to bkzhjx.wh.sdu.edu.cn, and return the cookies.
     """
