@@ -1,9 +1,13 @@
+"""
+Might be deprecated. Previously used to get if a classroom is available.
+"""
+
 from login import webpage_login
 import json, httpx, datetime
 from typing import Iterable
 
 
-def pcms_login(username:str, password:str, platform_info:dict = {}):
+def pcms_login(username:str, password:str, platform_info: str):
     headers = {
         'User-Agent': 'Mozilla/5.0',
     }
@@ -98,8 +102,8 @@ if __name__ == '__main__':
     import getpass
     username = input('username:')
     password = getpass.getpass('password:')
-    with open('fingerprint.json', 'r', encoding='utf-8') as f:
-        platform_info = json.load(f)
+    with open('Fingerprint.txt', 'r', encoding='utf-8') as f:
+        platform_info = f.read()
     cookies = pcms_login(username, password, platform_info)
     data = get_classroom_data(cookies)
     with open('classroom.json', 'w', encoding='utf-8') as f:
