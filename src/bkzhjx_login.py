@@ -1,11 +1,12 @@
-import os, sys, json, re
+import json
+import os, sys, re
 import bs4, datetime
 import httpx
 from httpx import Cookies
 from login import webpage_login
 import csv
 
-def bkzhjx_login(username, password, platform_info: dict = {}) -> Cookies:
+def bkzhjx_login(username, password, platform_fingerprint: str) -> Cookies:
     """
     Login to bkzhjx.wh.sdu.edu.cn, and return the cookies.
     """
@@ -17,7 +18,7 @@ def bkzhjx_login(username, password, platform_info: dict = {}) -> Cookies:
     bzb_njw = sso_redirect.cookies['bzb_njw']
     SERVERID = sso_redirect.cookies['SERVERID']
 
-    page2 = webpage_login(username, password, platform_info, r'http%3A%2F%2Fbkzhjx.wh.sdu.edu.cn%2Fsso.jsp')
+    page2 = webpage_login(username, password, platform_fingerprint, r'http%3A%2F%2Fbkzhjx.wh.sdu.edu.cn%2Fsso.jsp')
     if page2.status_code != 302:
         print('Check your username and password.')
         raise SystemError('Login failed: No redirect. to bkzhjx.wh.sdu.edu.cn')
@@ -46,7 +47,7 @@ def bkzhjx_login(username, password, platform_info: dict = {}) -> Cookies:
     redirect_page = httpx.get(page.headers['Location'], headers=headers, cookies=cookies)
 
     sso_page = httpx.get(redirect_page.headers['Location'], headers=headers, cookies=cookies)
-    # print(sso_page.headers, sso_page.status_code)
+
     while sso_page.status_code == 302:
         redirect_url = sso_page.headers['Location']
         sso_page = httpx.get(redirect_url, headers=headers, cookies=cookies)
@@ -66,7 +67,7 @@ def bkzhjx_login(username, password, platform_info: dict = {}) -> Cookies:
         return cookies
     
     else:
-        raise SystemError('Launch bkzhjx.wh.sdu.edu.cn failed.')
+        raise SystemError('Launch https://bkzhjx.wh.sdu.edu.cn failed.')
 
 
 def get_timetable(cookie):
@@ -120,7 +121,7 @@ def get_timetable(cookie):
                 print('尝试拉取所有课程：')
             page = bs4.BeautifulSoup(page.text, 'html.parser')
             try:
-                kbjcmsid = page.find(id='kbjcmsid_ul').findAll('li')[0].attrs['data-value']
+                kbjcmsid = page.find(id='kbjcmsid_ul').findAll('li')[0].attrs['data-value']  # type: ignore
                 assert main(rq, semester, kbjcmsid)
             except Exception as exc:
                 print(f'第二次尝试拉取课程列表失败——{exc}')
@@ -137,7 +138,7 @@ def get_timetable(cookie):
                     elif k%3==2:
                         print(span)  # course teacher
         except Exception:
-            raise SystemError('Launch bkzhjx.wh.sdu.edu.cn failed.')
+            raise SystemError('Launch https://bkzhjx.wh.sdu.edu.cn failed.')
     finally:
         return
 
@@ -154,7 +155,9 @@ def get_score(cookie, semester, csv_file = "output.csv"):
     if response.status_code == 200:
         # 解析 HTML
         soup = bs4.BeautifulSoup(response.text, "html.parser")
-        table = soup.find("table", id="dataList")
+        table:bs4.Tag = soup.find("table", id="dataList")  # type: ignore
+        if not isinstance(table, bs4.Tag):
+            return "Error: No table found. Maybe login has expired."
         rows = table.find_all("tr")
 
         data = []
@@ -176,31 +179,34 @@ def get_score(cookie, semester, csv_file = "output.csv"):
         print(f"数据已写入 {csv_file} 文件中。")
 
     else:
-        return f"Error: {response.status_code}"
+        return f"Error: {response.status_code} HTTP response."
 
 def interactive_login():
     
     import getpass
 
+
+    # check if fingerprint file exists
+    if not os.path.exists("Fingerprint.txt"):
+        # create fingerprint file which should be empty at first
+        with open("Fingerprint.txt", "w", encoding='utf-8') as f:
+            f.write("")
+        print("生成默认指纹文件，请修改Fingerprint.txt中的信息后重新运行；或者使用空指纹登录。")
+        print("指纹文件路径：", os.path.abspath("Fingerprint.txt"))
+        print("此文件作为设备的标志。其内容如果不改变，就不必重复输入短信验证码。如果更换设备，可以直接拷贝走这个文件。")
+    with open("Fingerprint.txt", "r", encoding='utf-8') as f:
+        fake_platoform_fingerprint = f.read()
+    if not fake_platoform_fingerprint:
+        if not input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("Fingerprint.txt")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y":
+            sys.exit(0)
     username = input('学号：')
     password = getpass.getpass('密码：')
-    # check if fingerprint.json exists
-    if not os.path.exists("fingerprint.json"):
-        # create fingerprint.json
-        with open("fingerprint.json", "w") as f:
-            json.dump({}, f)
-        print("生成默认指纹文件，请修改fingerprint.json中的信息后重新运行；或者使用空指纹登录。")
-        print("指纹文件路径：", os.path.abspath("fingerprint.json"))
-        print("此文件作为设备的标志。其内容如果不改变，就不必重复输入短信验证码。如果更换设备，可以直接拷贝走这个文件。")
-    with open("fingerprint.json", "r") as f:
-        fake_platoform_fingerprint = json.load(f)
-    if not fake_platoform_fingerprint:
-        if not input("当前指纹文件为空。指纹文件存放在："+os.path.abspath("fingerprint.json")+"\n是否继续运行程序并使用空指纹作为设备标志？(y/N)") == "y":
-            sys.exit(0)
-    cookie = bkzhjx_login(username, password, fake_platoform_fingerprint)
+    cookie: Cookies = bkzhjx_login(username, password, fake_platoform_fingerprint)
     out = dict(cookie.items())
     with open("bkzhjx_cookies.json", "w") as f:
         json.dump(out, f)
+    print('登录成功，cookies已保存至bkzhjx_cookies.json')
+    return cookie
 
 if __name__ == '__main__':
     try:
@@ -209,11 +215,12 @@ if __name__ == '__main__':
             cookie = httpx.Cookies(cookies)
         page = httpx.get(r'https://bkzhjx.wh.sdu.edu.cn/jsxsd/framework/xsMainV_new.htmlx?t1=1', cookies=cookie)
         assert page.status_code == 200
+        assert bs4.BeautifulSoup(page.text, 'html.parser').title.text != '登录'  # type: ignore
     except Exception as e:
         print('未找到有效cookies，将重新登录')
-        interactive_login()
+        cookie = interactive_login()
     else:
         print('cookies有效，免输入密码')
-    finally:
-        get_timetable(cookie)
-        get_score(cookie,'', csv_file='score.csv')
+    
+    get_timetable(cookie)
+    get_score(cookie,'', csv_file='score.csv')

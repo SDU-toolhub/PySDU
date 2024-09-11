@@ -53,7 +53,7 @@ def get_user_name_and_id(sTicket, baseURL="https://pass.sdu.edu.cn/"):
     return name, student_id
 
 
-def webpage_login(username: str, password: str, platform_info: dict = {}, service:str = ''):
+def webpage_login(username: str, password: str, platform_fingerprint: str, service:str = ''):
     """
     Using webpage to login, powered by execjs, BeautifulSoup4 to parse the html and httpx to send requests.
     """
@@ -67,10 +67,9 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
     rsa = strEnc(username + password + lt, "1", "2", "3")
     execution = re.findall(r'name="execution" value="(.*?)"', page.text)[0]
     event_id = re.findall(r'name="_eventId" value="(.*?)"', page.text)[0]
-    # platform_info = {str(random.randint(0, 100)): str(random.randint(0, 100)) for _ in range(10)}
     content = f"rsa={rsa}&ul={ul}&pl={pl}&lt={lt}&execution={execution}&_eventId={event_id}"
-    det = "\n".join(f"{x} = {y}"[:100] for x, y in platform_info.items())
-    murmur = x64hash128("".join(platform_info.values()), 31)
+    det = platform_fingerprint
+    murmur = platform_fingerprint
     murmur_s = x64hash128(det, 31)
     murmur_md5 = hex_md5(murmur_s)
     body1 = {
@@ -121,7 +120,7 @@ def webpage_login(username: str, password: str, platform_info: dict = {}, servic
             if k.text == r'{"info":"ok"}':
                 print('验证成功')
                 if body3['s'] == '1':
-                    print(f'对于设备信息：{platform_info}，下次登录将不再需要验证码')
+                    print(f'对于设备指纹：{platform_fingerprint}，下次登录将不再需要验证码')
         case _:
             print(
                 'Please check your username. Device information cannot be loaded by SDU pass.'
