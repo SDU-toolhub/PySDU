@@ -18,7 +18,7 @@ def restful_login(username, password, baseURL="https://pass.sdu.edu.cn/") -> str
     # 发送第一个请求，获取ticket
     ticket = httpx.post(
         f"{baseURL}cas/restlet/tickets",
-        content=f"username={username}&password={password}&lt=LT-1-1-1",
+        content=f"username={username}&password={password}",
     ).text
     if not ticket.startswith("TGT"):
         raise Exception(
