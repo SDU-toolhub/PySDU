@@ -8,5 +8,6 @@ __pycache__
 code_example
 .pdm-python
 bkzhjx_cookies.json
-fingerprint.json
+# fingerprint.json
 score.csv
+Fingerprint.txt
