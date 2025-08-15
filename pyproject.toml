@@ -1,6 +1,6 @@
 [project]
-name = ""
-version = ""
+name = "PySDU"
+version = "0.1.0"
 description = ""
 authors = [
     {name = "Vincent Son", email = "107471539+szw0407@users.noreply.github.com"},
