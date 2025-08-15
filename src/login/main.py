@@ -78,8 +78,8 @@ def webpage_login(
     )
     det = platform_fingerprint
     murmur = platform_fingerprint
-    murmur_s = hashlib.sha256(platform_fingerprint.encode("utf-8")).hexdigest()
-    murmur_md5 = hashlib.md5(murmur_s.encode("utf-8")).hexdigest()
+    murmur_s = ""   # this is not checked by the server, so we can use an empty string
+    murmur_md5 = hashlib.md5(murmur.encode('utf-8')).hexdigest()
     body1 = {
         "u": strEnc(username, "1", "2", "3"),
         "p": strEnc(password, "1", "2", "3"),
